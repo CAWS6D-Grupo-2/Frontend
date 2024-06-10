@@ -4,16 +4,26 @@ const http = axios.create({
     baseURL:'http://localhost:3000'
 })
 export class DeliveryApiService {
-    async getDeliveries() {
-        return await http.get('/deliveries');
+    async getLocals(){
+        return await http.get('/locals');
     }
-    async getDeliveryById(id) {
-        return await http.get('/deliveries/'+id)
+    /*async getStates() {
+        return await http.get('/states');
     }
-    async createDelivery(body) {
-        return await http.post('/deliveries',body)
+    async getCities() {
+        return await http.get('/cities');
     }
-    async getDeliveriesByArtisan(artisanId) {
-        return await http.get(`/deliveries?artisan=${artisanId}`);
+    async getCitiesByState(stateId) {
+        return await http.get(`/cities?state=${stateId}`);
     }
+    async getRestaurants() {
+        return await http.get('/restaurants');
+    }
+    async getRestaurantByCity(cityId) {
+        return await http.get(`/restaurants?city=${cityId}`)
+    }
+    async createRoute(body) {
+        return await http.post('/routes',body)
+    }*/
+
 }
