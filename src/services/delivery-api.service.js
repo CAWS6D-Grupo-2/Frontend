@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const http = axios.create({
-    baseURL:'http://localhost:3000'
+    baseURL:'https://api.npoint.io/bf7e711b211cf4105574'
 })
 export class DeliveryApiService {
     async getLocals() {
