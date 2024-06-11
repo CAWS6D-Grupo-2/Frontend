@@ -62,6 +62,8 @@ const selectedDestination = ref();
           </div>
         </template>
       </pv-dropdown>
+
+      <pv-button class="btn" icon="pi pi-trash" rounded @click="clearSelections()"/>
     </div>
 
     <div class="data-container">
@@ -95,7 +97,7 @@ const selectedDestination = ref();
         <pv-button class="btn" label="Calcular" @click="calculate()"/>
       </div>
 
-      <pv-card class="card" hidden="true">
+      <pv-card v-if="optimizedRoute" class="card" :hidden="false">
         <template #header>
           <h3 class="card-header">Ruta Optimizada:</h3>
         </template>
@@ -105,7 +107,7 @@ const selectedDestination = ref();
           </div>
         </template>
         <template #footer>
-          <h3>Tiempo Estimado: {{  }}</h3>
+          <h3>Tiempo Estimado: {{ estimatedRouteTime }} minutos</h3>
         </template>
       </pv-card>
     </div>
@@ -126,6 +128,8 @@ export default {
       citySelected: '',
       locationSelected: '',
       destinationsSelected: [],
+      estimatedRouteTime: '',
+      optimizedRoute: false,
       deliveryApiService: new DeliveryApiService()
     };
   },
@@ -191,6 +195,17 @@ export default {
     },
     async handleDestinationSelect(selectedDestination) {
       this.destinationsSelected.push(selectedDestination);
+    },
+    async clearSelections() {
+      window.location.reload();
+    },
+    async calculate(){
+      if(this.locationSelected === '' || this.destinationsSelected.length === 0){
+        alert('Por favor seleccione un local y al menos un destino');
+        return;
+      }else{
+        this.optimizedRoute = true;
+      }
     }
   }
 };
