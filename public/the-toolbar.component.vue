@@ -9,7 +9,7 @@
     </template>
     <template #center>
       <div class="title-container">
-        <h1>Rutas de Entrega de Caminos mínimos</h1>
+        <h1>Calculadora de Rutas de Entrega Pizza Hut</h1>
       </div>
     </template>
     <template #end>
@@ -19,9 +19,5 @@
 </template>
 
 <style scoped>
-.toolbar{
-  background-color: #3CA89A;
-  color: black;
-}
 
 </style>

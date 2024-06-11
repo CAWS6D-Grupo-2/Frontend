@@ -33,6 +33,7 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import Textarea from 'primevue/textarea';
 import Dropdown from 'primevue/dropdown';
+import Chip from 'primevue/chip';
 
 createApp(App)
     .use(router)
@@ -60,4 +61,5 @@ createApp(App)
     .component('PvInputIcon', InputIcon)
     .component('PvTextarea', Textarea)
     .component('PvDropdown', Dropdown)
+    .component('PvChip', Chip)
     .mount('#app')

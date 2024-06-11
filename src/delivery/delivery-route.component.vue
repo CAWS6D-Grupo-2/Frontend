@@ -3,133 +3,240 @@ import { ref } from 'vue';
 import TheToolbar from "/public/the-toolbar.component.vue";
 
 const selectedCity = ref();
-const groupedCities = ref([
-  {
-    label: 'New York',
-    code: 'NY',
-    items: [
-      { label: 'Bronx', value: 'Bronx' },
-      { label: 'city', value: 'city' },
-      { label: 'city', value: 'city' }
-    ]
-  },
-  {
-    label: 'Florida',
-    code: 'FL',
-    items: [
-      { label: 'city', value: 'city' },
-      { label: 'city', value: 'city' },
-      { label: 'city', value: 'city' }
-    ]
-  },
-  {
-    label: 'Texas',
-    code: 'TX',
-    items: [
-      { label: 'city', value: 'city' },
-      { label: 'city', value: 'city' },
-      { label: 'city', value: 'city' }
-    ]
-  }
-]);
+const selectedLocation = ref();
+const selectedDestination = ref();
 </script>
 
 <template>
   <TheToolbar/>
 
   <div class="delivery-route-container">
-    <h2>Selecciona una ciudad</h2>
     <div class="dropdown-container">
-      <pv-dropdown v-model="selectedCity" :options="groupedCities" optionLabel="label" optionGroupLabel="label" optionGroupChildren="items"
-                   placeholder="Select a City" class="w-full md:w-14rem" @click="handleCitySelect">
-        <template #optiongroup="slotProps">
+      <pv-dropdown v-model="selectedCity" :options="cities" filter optionLabel="name" placeholder="Select a City"
+                     class="w-full md:w-14rem" @change="handleCitySelect(selectedCity.name)">
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex align-items-center">
+            <div>{{ slotProps.value.name }}</div>
+          </div>
+          <span v-else>
+            {{ slotProps.placeholder }}
+          </span>
+        </template>
+        <template #option="slotProps">
           <div class="flex align-items-center">
-            <img src="/src/assets/images/usa-flag.png" style="width: 20px; margin-right: 1rem;" />
-            <div style="color: #3CA89A;">{{ slotProps.option.label }}</div>
+            <div>{{ slotProps.option.name }}</div>
+          </div>
+        </template>
+      </pv-dropdown>
+
+      <pv-dropdown v-model="selectedLocation" :options="locations" filter optionLabel="name" placeholder="Select a Location"
+                   class="w-full md:w-14rem" @change="handleLocationSelect(selectedLocation.name)">
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex align-items-center">
+            <div>{{ slotProps.value.name }}</div>
+          </div>
+          <span v-else>
+            {{ slotProps.placeholder }}
+          </span>
+        </template>
+        <template #option="slotProps">
+          <div class="flex align-items-center">
+            <div>{{ slotProps.option.name }}</div>
+          </div>
+        </template>
+      </pv-dropdown>
+
+      <pv-dropdown v-model="selectedDestination" :options="destinations" filter optionLabel="name" placeholder="Select a Destination"
+                   class="w-full md:w-14rem" @change="handleDestinationSelect(selectedDestination.name)">
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex align-items-center">
+            <div>{{ slotProps.value.name }}</div>
+          </div>
+          <span v-else>
+            {{ slotProps.placeholder }}
+          </span>
+        </template>
+        <template #option="slotProps">
+          <div class="flex align-items-center">
+            <div>{{ slotProps.option.name }}</div>
           </div>
         </template>
       </pv-dropdown>
     </div>
 
-    <PvCard class="card">
-      <template #header>
-        <h3 class="card-header">Selecciona un Restaurante</h3>
-      </template>
-      <template #content>
-        <div class="select-restaurant-container">
-          <i class="pi pi-face-smile"/><h3>Local:</h3><br>
-          <i class="pi pi-face-smile"/><h3>Destino:</h3>
-          <pv-button class="btn" label="D1"/>
-          <pv-button class="btn" label="D2"/>
-          <pv-button class="btn" label="D3"/><br>
-          <i class="pi pi-face-smile"/><h3>Ciudad:</h3>
-        </div>
-      </template>
-    </PvCard>
+    <div class="data-container">
+      <pv-card class="card">
+        <template #header>
+          <h3 class="card-header">Datos seleccionados:</h3>
+        </template>
+        <template #content>
+          <div class="select-restaurant-container">
+            <i class="pi pi-face-smile"/><h3>Local: </h3><pv-chip :label="`${locationSelected}`" /><br>
+            <i class="pi pi-face-smile"/><h3>Destino: </h3><pv-chip :label="`${destinationsSelected}`" /><br>
+            <i class="pi pi-face-smile"/><h3>Ciudad: </h3><pv-chip :label="`${citySelected}`" />
+          </div>
+        </template>
+      </pv-card>
 
+      <pv-card class="card">
+        <template #header>
+          <h3 class="card-header">Destinos:</h3>
+        </template>
+        <template #content>
+          <div class="map-container">
+            <img src="/src/assets/images/placeholder.png" alt="Map" style="display: block; margin: 1rem auto 0; border-radius: 20px; width:75%;"/>
+          </div>
+        </template>
+      </pv-card>
+
+      <div class="btn-container">
+        <pv-chip style="color: red;" label="Nodo Origen"/>
+        <pv-chip style="color: blue;" label="Destinos"/>
+        <pv-button class="btn" label="Calcular" @click="calculate()"/>
+      </div>
+
+      <pv-card class="card" hidden="true">
+        <template #header>
+          <h3 class="card-header">Ruta Optimizada:</h3>
+        </template>
+        <template #content>
+          <div class="map-container">
+            <img src="/src/assets/images/placeholder.png" alt="Map" style="display: block; margin: 1rem auto 0; border-radius: 20px; width:75%;"/>
+          </div>
+        </template>
+        <template #footer>
+          <h3>Tiempo Estimado: {{  }}</h3>
+        </template>
+      </pv-card>
+    </div>
 
   </div>
-
 </template>
 
 <script>
-import {DeliveryApiService} from "@/services/delivery-api.service.js";
+import { DeliveryApiService } from "@/services/delivery-api.service.js";
 
 export default {
   name: 'delivery-route',
-  data(){
-    return{
-      states:[],
-      cities:[],
-      restaurants:[],
-      destinations:[],
+  data() {
+    return {
+      cities: [],
+      locations: [],
+      destinations: [],
+      citySelected: '',
+      locationSelected: '',
+      destinationsSelected: [],
       deliveryApiService: new DeliveryApiService()
-    }
+    };
   },
-  async mounted(){
+  async mounted() {
     await this.refresh();
   },
-  methods:{
-    async refresh(){
-      /*const responseStates = await this.deliveryApiService.getStates();
-      this.states = responseStates.data;
-      const responseCities = await this.deliveryApiService.getCities();
-      this.cities = responseCities.data;*/
-      const responseRestaurants = await this.deliveryApiService.getLocals();
-      this.restaurants = responseRestaurants.data;
+  methods: {
+    async refresh() {
+      await this.getCities();
+    },
+    async getCities() {
+      try {
+        const response = await this.deliveryApiService.getLocals();
+        this.cities = response.data.map(local => ({
+          name: local.city,
+          code: local.state
+        })).filter((value, index, self) =>
+            self.findIndex(v => v.name === value.name) === index
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async getLocations(city) {
+      try {
+        const response = await this.deliveryApiService.getLocationsByCity(city);
+        this.locations = response.data
+            .filter(local => local.ID % 2 !== 0 && local.city === city)
+            .map(local => ({
+              name: local.ID + " " + local.type,
+              code: local.postal_code
+            }))
+            .filter((value, index, self) =>
+                self.findIndex(v => v.name === value.name) === index
+            );
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async getDestinations(city) {
+      try {
+        const response = await this.deliveryApiService.getLocationsByCity(city);
+        this.destinations = response.data
+            .filter(local => local.ID % 2 === 0 && local.city === city)
+            .map(local => ({
+              name: local.ID + " " + local.address_1 + " ",
+              code: local.postal_code
+            }))
+            .filter((value, index, self) =>
+                self.findIndex(v => v.name === value.name) === index
+            );
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async handleCitySelect(selectedCity) {
+      this.citySelected = selectedCity;
+      await this.getLocations(selectedCity);
+      await this.getDestinations(selectedCity);
+    },
+    async handleLocationSelect(selectedLocation) {
+      this.locationSelected = selectedLocation;
+    },
+    async handleDestinationSelect(selectedDestination) {
+      this.destinationsSelected.push(selectedDestination);
     }
   }
-}
+};
 </script>
 
 <style scoped>
-.delivery-route-container{
-  display: flex;
-  flex-direction: column;
+.delivery-route-container {
   margin: 3rem;
 }
 .dropdown-container {
   display: flex;
+  flex-direction: row;
+  gap: 2rem;
   justify-content: center;
   margin-bottom: 3rem;
 }
-.card-header{
-  margin: 2rem 2rem 0;
+.data-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.select-restaurant-container{
+.btn-container{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+.card{
+  width: 100vh;
+  margin-bottom: 3rem;
+}
+.card-header {
+  padding-top: 2rem;
+  margin-left: 2rem;
+}
+.select-restaurant-container {
   margin-top: 1rem;
 }
-.select-restaurant-container h3{
+.select-restaurant-container h3 {
   display: inline;
 }
-.select-restaurant-container i{
+.select-restaurant-container i {
   font-size: 1.5rem;
   color: #3CA89A;
   margin: 1rem;
 }
-.btn{
-  margin-left: 1rem;
-  background-color: #3CA89A;
-  border: 0;
-}
+
 </style>
