@@ -101,13 +101,13 @@ const selectedDestination = ref();
           <span class="bg-blue-500 border-circle w-3rem h-3rem flex align-items-center justify-content-center" style="color:white;">D</span>
           <span class="ml-2 font-semibold">Destinos</span>
         </pv-chip>
-        <pv-button severity="help" outlined @click="optimizeRouteInMap()">
+        <pv-button severity="help" outlined @click="optimizeRouteInMap(),optimizeRouteInMapPrim()">
          Calcular ruta</pv-button>
       </div>
 
       <pv-card  class="card" >
         <template #header>
-          <h3 class="card-header">Ruta Optimizada:</h3>
+          <h3 class="card-header">Ruta Optimizada con algoritmo de Kruskal:</h3>
         </template>
         <template #content>
           <div id="map-container">
@@ -115,7 +115,23 @@ const selectedDestination = ref();
           </div>
         </template>
         <template #footer>
-          <h3>Tiempo Estimado: {{ estimatedRouteTime }} minutos</h3>
+          <h3>Tiempo Estimado: {{ estimatedRouteTime }} </h3>
+          <h3>Tiempo del Algoritmo: {{ timeTakenKruskal }} </h3>
+        </template>
+      </pv-card>
+
+      <pv-card  class="card" >
+        <template #header>
+          <h3 class="card-header">Ruta Optimizada con algoritmo de Prim:</h3>
+        </template>
+        <template #content>
+          <div id="map-container">
+            <div id="map-optimized-prim"></div>
+          </div>
+        </template>
+        <template #footer>
+          <h3>Tiempo Estimado: {{ estimatedRouteTimePrim }} </h3>
+          <h3>Tiempo del Algoritmo: {{ timeTakenPrim }} </h3>
         </template>
       </pv-card>
     </div>
@@ -138,12 +154,17 @@ export default {
       locationSelected: '',
       destinationsSelected: [],
       currentLocal: null,
+      deliveryApiService: new DeliveryApiService(),
       destinationsDataForMap: [],
       estimatedRouteTime: '',
+      estimatedRouteTimePrim: '',
       showOptimizedRoute: false,
-      deliveryApiService: new DeliveryApiService(),
+      showOptimizedRoutePrim: false,
       map: null,
-      mapOptimized: null
+      mapOptimized: null,
+      mapOptimizedPrim: null,
+      timeTakenKruskal: 0,
+      timeTakenPrim: 0
     };
   },
   async mounted() {
@@ -312,6 +333,9 @@ export default {
         }
       }
 
+      // Start timing Kruskal's algorithm
+      const startTimeKruskal = performance.now();
+
       // Kruskal's algorithm to find MST
       edges.sort((a, b) => a[0] - b[0]);
 
@@ -336,6 +360,15 @@ export default {
           mst.push([i, j]);
           totalDistance += distance;
         }
+      }
+
+      // End timing Kruskal's algorithm
+      const endTimeKruskal = performance.now();
+      this.timeTakenKruskal = endTimeKruskal - startTimeKruskal;
+      if (this.timeTakenKruskal < 1) {
+        this.timeTakenKruskal = (endTimeKruskal - startTimeKruskal).toFixed(2);
+      } else {
+        this.timeTakenKruskal = this.timeTakenKruskal.toFixed(2);
       }
 
       // Display the optimized route on the map
@@ -382,6 +415,114 @@ export default {
 
       this.showOptimizedRoute = true;
     },
+    optimizeRouteInMapPrim(){
+      let velocity = 30; // velocity estimated to 30 km/h
+      if (!this.currentLocal || this.destinationsDataForMap.length === 0) {
+        return;
+      }
+
+      const allNodes = [this.currentLocal, ...this.destinationsDataForMap];
+      const numNodes = allNodes.length;
+      const distances = Array.from({ length: numNodes }, () => Array(numNodes).fill(Infinity));
+
+      // Create a distance matrix
+      for (let i = 0; i < numNodes; i++) {
+        for (let j = i + 1; j < numNodes; j++) {
+          const distance = this.calculateDistance(
+              allNodes[i].latitude, allNodes[i].longitude,
+              allNodes[j].latitude, allNodes[j].longitude
+          );
+          distances[i][j] = distance;
+          distances[j][i] = distance;
+        }
+      }
+
+      // Start timing Prim's algorithm
+      const startTimePrim = performance.now();
+
+      // Prim's algorithm to find MST
+      const mst = [];
+      const visited = Array(numNodes).fill(false);
+      const minEdge = Array(numNodes).fill([Infinity, -1]);
+      minEdge[0] = [0, -1]; // Start from node 0
+
+      let totalDistance = 0;
+      for (let i = 0; i < numNodes; i++) {
+        // Find the minimum edge
+        let u = -1;
+        for (let j = 0; j < numNodes; j++) {
+          if (!visited[j] && (u === -1 || minEdge[j][0] < minEdge[u][0])) {
+            u = j;
+          }
+        }
+
+        if (minEdge[u][1] !== -1) {
+          mst.push([u, minEdge[u][1]]);
+          totalDistance += minEdge[u][0];
+        }
+
+        visited[u] = true;
+
+        // Update the minimum edges
+        for (let v = 0; v < numNodes; v++) {
+          if (!visited[v] && distances[u][v] < minEdge[v][0]) {
+            minEdge[v] = [distances[u][v], u];
+          }
+        }
+      }
+
+      // End timing Prims's algorithm
+      const endTimePrim = performance.now();
+      this.timeTakenPrim = endTimePrim - startTimePrim;
+      if (this.timeTakenPrim < 1) {
+        this.timeTakenPrim = (endTimePrim - startTimePrim).toFixed(2);
+      } else {
+        this.timeTakenPrim = this.timeTakenPrim.toFixed(2);
+      }
+      // Display the optimized route on the map
+      if (this.mapOptimizedPrim) {
+        this.mapOptimizedPrim.remove();
+      }
+      this.mapOptimizedPrim = L.map("map-optimized-prim").setView([this.currentLocal.latitude, this.currentLocal.longitude], 11);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(this.mapOptimizedPrim);
+
+      // Add markers again
+      const redIcon = L.icon({
+        iconUrl: "https://maps.gstatic.com/intl/en_us/mapfiles/marker.png",
+        iconSize: [30, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+      });
+
+      L.marker([this.currentLocal.latitude, this.currentLocal.longitude], {icon: redIcon})
+          .addTo(this.mapOptimizedPrim)
+          .bindPopup(`<b>${this.currentLocal.type}</b><br>${this.currentLocal.address_1}`)
+          .openPopup();
+
+      this.destinationsDataForMap.forEach((destination) => {
+        L.marker([destination.latitude, destination.longitude])
+            .addTo(this.mapOptimizedPrim)
+            .bindPopup(`<b>Client</b><br>${destination.address_1}`);
+      });
+
+      // Draw the MST
+      mst.forEach(([i, j]) => {
+        const latlngs = [
+          [allNodes[i].latitude, allNodes[i].longitude],
+          [allNodes[j].latitude, allNodes[j].longitude],
+        ];
+        L.polyline(latlngs, {color: "orange"}).addTo(this.mapOptimizedPrim);
+      });
+
+      const averageSpeedKmH = 30;
+      const estimatedTimeMinutes = (totalDistance / averageSpeedKmH) * 60;
+      this.estimatedRouteTimePrim = estimatedTimeMinutes.toFixed(2) + ' minutos';
+
+      this.showOptimizedRoutePrim = true;
+    }
   }
 };
 </script>
@@ -396,7 +537,7 @@ export default {
   align-items: center;
 }
 
-#map, #map-optimized {
+#map, #map-optimized, #map-optimized-prim{
   height: 400px;
   width: 100%;
 }
